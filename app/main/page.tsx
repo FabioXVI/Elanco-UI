@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import axios from 'axios';
+
 import "./main.css";
 import NavBar from "../navbar/page";
 import Footer from "../footer/page";
 import Link from "next/link";
 import { Box, Button, ButtonGroup } from "@mui/material";
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import url from 'url'
-import querystring from 'querystring'
+import { LineChart } from '@mui/x-charts/LineChart';
+
 // interface Data {
 //   average_activityLevelSteps: number; // Adjust the type accordingly
 //   // Add other properties as needed
@@ -32,6 +33,12 @@ interface DataItem {
   AverageHoursSlept: number;
   AverageNormalHours:number;
   AverageEatingHours: number;
+
+  Month_Year: string;
+}
+
+interface CaloriesBurnedData {
+  TotalCaloriesBurned: number;
 }
 
 const currentUrl = window.location.href;
@@ -39,9 +46,9 @@ const urlObj = new URL(currentUrl);
 let dogNum = urlObj.searchParams.get('dog')
 console.log(dogNum)
 
-
 export default function Main() {
   // const [data, setData] = useState([]);
+
 
   const [data, setData] = useState<DataItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,15 +56,6 @@ export default function Main() {
   const [anotherData, setAnotherData] = useState<DataItem[]>([]);
   const [anotherLoading, setAnotherLoading] = useState(true);
   const [anotherError, setAnotherError] = useState<string | null>(null);
-  const [another2Data, setAnother2Data] = useState<DataItem[]>([]);
-  const [another2Loading, setAnother2Loading] = useState(true);
-  const [another2Error, setAnother2Error] = useState<string | null>(null);
-  const [another3Data, setAnother3Data] = useState<DataItem[]>([]);
-  const [another3Loading, setAnother3Loading] = useState(true);
-  const [another3Error, setAnother3Error] = useState<string | null>(null);
-  const [dog, setDog] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null); // State to hold selected date
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,19 +89,6 @@ export default function Main() {
     fetchAnotherData();
   }, []);
 
-  // const [data, setData] = useState<Data | null>(null);
-
-  // async function getData() {
-  //   try {
-  //     const res = await fetch(`http://localhost:4000/average`);
-  //     const jsonData: Data = await res.json();
-  //     console.log("Received data:", jsonData);
-  //     setData(jsonData);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //   }
-  // }
-  
   const [dog, setDog] = useState<string>('');
 
   const handleChange = (event: SelectChangeEvent) => {
@@ -125,24 +110,34 @@ export default function Main() {
 
   const dogOptions = ['canineone', 'caninetwo', 'caninethree'];
 
-  
-  
-  // useEffect(() => {
-  //   getData();
-  // }, []);
+  useEffect(() => {
+  const fetchData = async () => {
+  try {
+    const response = await axios.get('http://localhost:4000/averageEachDayCanineOne' + dogNum);
+    setData(response.data);
+    setLoading(false);
+    } catch (error) {
+    console.error('Error fetching data:', error);
+    setError("Error fetching data:");
+    setLoading(false);
+    }
+  };
+    fetchData();
+  }, []);
 
+  const [caloriesBurnedYesterday, setCaloriesBurnedYesterday] = useState<CaloriesBurnedData | null>(null);
+  useEffect(() => {
+    const fetchCaloriesBurnedYesterday = async () => {
+      try {
+        const response = await axios.get('http://localhost:4000/weeklyTotalCalorieBurn_' + dogNum);
+        setCaloriesBurnedYesterday(response.data);
+      } catch (error) {
+        console.error('Error fetching calories burned yesterday:', error);
+      }
+    };
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await axios.get('http://localhost:4000/average');
-  //       setData(response.data);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
+    fetchCaloriesBurnedYesterday();
+ }, []);
 
   if (loading) return <p>Loading...</p>
 
@@ -163,8 +158,17 @@ export default function Main() {
   const anotherChartData = anotherData.map(item => ({
     ID: item.DogID,
     sleep: item.AverageHoursSlept,
+    name: item.Month_Year,
+    value: item.average_calorieBurn
 
   }));
+
+  const thirdChartData = Array.isArray(caloriesBurnedYesterday)
+  ? caloriesBurnedYesterday.map((item, index) => ({
+       value: item.TotalCaloriesBurned,
+       label: item.Date,
+     }))
+  : [];
 
   return (
     <main>
@@ -172,7 +176,6 @@ export default function Main() {
           <NavBar/>
           <div className="title">
             <h1>Welcome </h1>
-          
             <div>
             <Box>
                 <ButtonGroup variant="contained">
@@ -182,22 +185,9 @@ export default function Main() {
                     </Button>
                   ))}
                 </ButtonGroup>
-                <br/>
-                <br/>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker label="Select a date to view data"
-                    format = "DD-MM-YYYY"
-                    minDate= {dayjs("2021-1-1")}
-                    maxDate= {dayjs("2023-12-31")}
-                    onChange={handleDateChange}
-                    defaultValue={dayjs(date)}
-                  />
-                </LocalizationProvider>
-            
             </Box>
             </div>
             <h1><div style={{fontWeight: 'lighter'}}>Your pet's health at a glance</div></h1>
-            
             </div>
           <div className="cards">
             <div className="card">
@@ -205,7 +195,6 @@ export default function Main() {
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_activityLevelSteps)} steps a day</p>
-              
             </div>
             <div className="card">
               Calories
@@ -242,28 +231,6 @@ export default function Main() {
               <Link href={'/sleep?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {anotherData.map(item => item.AverageHoursSlept)} hours a day</p>
-              <p>{getWalkReviewMessage()}</p>
-              <p>{getSleepReviewMessage()}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignContent: 'center' }}>
-                {another3Data.length > 0 && (
-                  <PieChart
-                    dataset={chartData}
-                    series= {[{ data: walkingSeriesData, innerRadius: 40}]}
-                    width={300}
-                    height={120}
-                    tooltip={{ trigger: 'item' }}
-                  />
-                )}
-                {another3Data.length > 0 && (
-                  <PieChart
-                    dataset={chartData}
-                    series= {[{ data: sleepingSeriesData, innerRadius: 40}]}
-                    width={300}
-                    height={120}
-                    tooltip={{ trigger: 'item' }}
-                  />
-                )}
-              </div>
             </div>
             <div className="card">
               Water Intake
