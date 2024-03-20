@@ -54,12 +54,12 @@ export default function Heart() {
         setAnotherLoading(false);
       }
     };
-  
+
     fetchAnotherData();
   }, []);
 
   const [dog, setDog] = useState<string>('');
-  
+
   const handleDogChange = (value: string) => {
     setDog(value);
   };

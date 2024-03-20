@@ -8,12 +8,9 @@ import NavBar from "../navbar/page";
 import Footer from "../footer/page";
 import Link from "next/link";
 import { Box, Button, ButtonGroup } from "@mui/material";
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import url from 'url'
-import querystring from 'querystring'
+import { LineChart } from '@mui/x-charts/LineChart';
+
 // interface Data {
 //   average_activityLevelSteps: number; // Adjust the type accordingly
 //   // Add other properties as needed
@@ -21,6 +18,7 @@ import querystring from 'querystring'
 interface DataItem {
   Id: number; // Adjust the type based on your actual data structure
   Date: string
+
   average_value_heart_rate: number;
   average_temperature: number;
   average_weight: number;
@@ -35,6 +33,12 @@ interface DataItem {
   AverageHoursSlept: number;
   AverageNormalHours:number;
   AverageEatingHours: number;
+
+  Month_Year: string;
+}
+
+interface CaloriesBurnedData {
+  TotalCaloriesBurned: number;
 }
 
 const currentUrl = window.location.href;
@@ -42,9 +46,7 @@ const urlObj = new URL(currentUrl);
 let dogNum = urlObj.searchParams.get('dog')
 console.log(dogNum)
 
-
 export default function Main() {
-
   // const [data, setData] = useState([]);
 
 
@@ -83,23 +85,10 @@ export default function Main() {
         setAnotherLoading(false);
       }
     };
-  
+
     fetchAnotherData();
   }, []);
 
-  // const [data, setData] = useState<Data | null>(null);
-
-  // async function getData() {
-  //   try {
-  //     const res = await fetch(`http://localhost:4000/average`);
-  //     const jsonData: Data = await res.json();
-  //     console.log("Received data:", jsonData);
-  //     setData(jsonData);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //   }
-  // }
-  
   const [dog, setDog] = useState<string>('');
 
   const handleChange = (event: SelectChangeEvent) => {
@@ -121,24 +110,34 @@ export default function Main() {
 
   const dogOptions = ['canineone', 'caninetwo', 'caninethree'];
 
-  
-  
-  // useEffect(() => {
-  //   getData();
-  // }, []);
+  useEffect(() => {
+  const fetchData = async () => {
+  try {
+    const response = await axios.get('http://localhost:4000/averageEachDayCanineOne' + dogNum);
+    setData(response.data);
+    setLoading(false);
+    } catch (error) {
+    console.error('Error fetching data:', error);
+    setError("Error fetching data:");
+    setLoading(false);
+    }
+  };
+    fetchData();
+  }, []);
 
+  const [caloriesBurnedYesterday, setCaloriesBurnedYesterday] = useState<CaloriesBurnedData | null>(null);
+  useEffect(() => {
+    const fetchCaloriesBurnedYesterday = async () => {
+      try {
+        const response = await axios.get('http://localhost:4000/weeklyTotalCalorieBurn_' + dogNum);
+        setCaloriesBurnedYesterday(response.data);
+      } catch (error) {
+        console.error('Error fetching calories burned yesterday:', error);
+      }
+    };
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await axios.get('http://localhost:4000/average');
-  //       setData(response.data);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
+    fetchCaloriesBurnedYesterday();
+ }, []);
 
   if (loading) return <p>Loading...</p>
 
@@ -150,14 +149,26 @@ export default function Main() {
     cal: item.average_calorieBurn,
     step: item.average_activityLevelSteps,
     food: item.average_foodIntake,
-    water: item.average_waterIntake
+    water: item.average_waterIntake,
+
+    monthYear: item.Month_Year,
+    value: item.average_calorieBurn
   }));
 
   const anotherChartData = anotherData.map(item => ({
     ID: item.DogID,
     sleep: item.AverageHoursSlept,
+    name: item.Month_Year,
+    value: item.average_calorieBurn
 
   }));
+
+  const thirdChartData = Array.isArray(caloriesBurnedYesterday)
+  ? caloriesBurnedYesterday.map((item, index) => ({
+       value: item.TotalCaloriesBurned,
+       label: item.Date,
+     }))
+  : [];
 
   return (
     <main>
@@ -180,55 +191,79 @@ export default function Main() {
             </div>
           <div className="cards">
             <div className="card">
-              Activity Level 
+              Activity Level
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_activityLevelSteps)} steps a day</p>
             </div>
             <div className="card">
-              Calories 
+              Calories
               <Link href={'/calories?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
-              <p>Average {data.map(item => item.average_calorieBurn)} calories burned a day</p>
+              <LineChart
+                dataset={thirdChartData}
+                xAxis={[
+                    {
+                      scaleType: "band",
+                      data: thirdChartData.map(item => item.label),
+                      valueFormatter: (date) => {
+                        const [day, month, year] = date.split('-');
+                        const formattedDate = `${day}/${month}`;
+                        return formattedDate;
+                      },
+                    },
+                ]}
+                series={[
+                    {
+                      label: 'Most recent week daily calories burned',
+                      curve: "linear",
+                      color: "#FF0000",
+                      data: thirdChartData.map(item => item.value),
+                    },
+                ]}
+                width={500}
+                height={300}
+                tooltip={{trigger: "item"}}
+              />
             </div>
             <div className="card">
-              Sleep 
+              Sleep
               <Link href={'/sleep?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {anotherData.map(item => item.AverageHoursSlept)} hours a day</p>
             </div>
             <div className="card">
-              Water Intake 
+              Water Intake
               <Link href={'/water?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_waterIntake)} ml a day</p>
             </div>
             <div className="card">
-              Heart Rate 
+              Heart Rate
               <Link href={'/heart?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_value_heart_rate)} beats per minute</p>
             </div>
             <div className="card">
-              Breathing Rate 
+              Breathing Rate
               <Link href={'/breathing?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_breathing)} breaths per minute</p>
             </div>
             <div className="card">
-              Temperature 
+              Temperature
               <Link href={'/temperature?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_temperature)}°c</p>
             </div>
             <div className="card">
-              Weight 
+              Weight
               <Link href={'/weight?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_weight)}kg</p>
             </div>
             <div className="card">
-              Extra card 
+              Extra card
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
             </div>
           </div>
