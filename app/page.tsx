@@ -34,6 +34,7 @@ export default function Home() {
           <Link href="/login" style={{ textDecoration: 'none' }}>
             <Button className="button">Login</Button>
           </Link>
+          
           <Link href="/register" style={{ textDecoration: 'none' }}>
             <Button className="button">Sign Up</Button>
           </Link>
