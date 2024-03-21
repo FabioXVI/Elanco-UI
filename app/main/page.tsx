@@ -10,7 +10,7 @@ import { Box, Button, ButtonGroup, Typography } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { SelectChangeEvent } from '@mui/material/Select';
 import url from 'url'
 import querystring from 'querystring'
 import { BarChart, PieChart } from "@mui/x-charts";
@@ -18,7 +18,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs, { Dayjs } from "dayjs";
-import { LineChart } from '@mui/x-charts/LineChart';
 import { monitorEventLoopDelay } from "perf_hooks";
 
 
@@ -47,6 +46,7 @@ interface DataItem {
   Month_Year: string;
   totalWalkingHours: number;
   totalHoursSlept: number;
+  totalSteps: number;
 }
 
 const currentUrl = window.location.href;
@@ -78,57 +78,38 @@ export default function Main() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get<DataItem[]>('http://localhost:4000/average_'+dogNum);
-        setData(response.data);
+        const response1 = await axios.get<DataItem[]>('http://localhost:4000/average_'+dogNum);
+        setData(response1.data);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Error fetching data');
         setLoading(false);
       }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchAnotherData = async () => {
+  
       try {
-        const response = await axios.get<DataItem[]>('http://localhost:4000/BehaviourPatternActionsAverage' + dogNum);
-        setAnotherData(response.data);
+        const response2 = await axios.get<DataItem[]>('http://localhost:4000/BehaviourPatternActionsAverage' + dogNum);
+        setAnotherData(response2.data);
         setAnotherLoading(false);
       } catch (error) {
         console.error('Error fetching another data:', error);
         setAnotherError('Error fetching another data');
         setAnotherLoading(false);
       }
-    };
   
-    fetchAnotherData();
-  }, []);
-
-  useEffect(() => {
-    const fetchAnother2Data = async () => {
       try {
-        const response = await axios.get<DataItem[]>('http://localhost:4000/MonthlyAverage' + dogNum);
-        setAnother2Data(response.data);
+        const response3 = await axios.get<DataItem[]>('http://localhost:4000/MonthlyAverage' + dogNum);
+        setAnother2Data(response3.data);
         setAnother2Loading(false);
       } catch (error) {
         console.error('Error fetching another data:', error);
         setAnother2Error('Error fetching another data');
         setAnother2Loading(false);
       }
-    };
   
-    fetchAnother2Data();
-  }, []);
-
-
-  useEffect(() => {
-    const fetchAnother3Data = async () => {
       try {
-        const response = await axios.get<DataItem[]>('http://localhost:4000/averageEachDay' + dogNum);
-        setAnother3Data(response.data);
+        const response4 = await axios.get<DataItem[]>('http://localhost:4000/averageEachDay' + dogNum);
+        setAnother3Data(response4.data);
         setAnother3Loading(false);
       } catch (error) {
         console.error('Error fetching another data:', error);
@@ -137,8 +118,9 @@ export default function Main() {
       }
     };
   
-    fetchAnother3Data();
+    fetchData();
   }, []);
+  
   
 
   const handleChange = (event: SelectChangeEvent) => {
@@ -147,16 +129,15 @@ export default function Main() {
 
   useEffect(() => {
     if (dog !== '') {
-      var url = require('url');
-      const adr = new URL('http://localhost:3000/main');
-      adr.searchParams.append('dog', dog);
+      const newUrl = new URL('http://localhost:3000/main');
+      newUrl.searchParams.append('dog', dog);
       if (date !== null) {
-        adr.searchParams.append('date', date);
+        newUrl.searchParams.append('date', date);
+      }
+      window.location.href = newUrl.toString();
     }
+  }, [dog, date]);
 
-      window.location.href = adr.toString();
-    }
-  }, [dog]);
 
   const handleDogChange = (value: string) => {
     setDog(value);
@@ -169,13 +150,13 @@ export default function Main() {
   };
 
   useEffect(() => {
-    if (selectedDate) {
-      const formattedDate = selectedDate.format('DD-MM-YYYY'); // Format date as required
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('date', formattedDate); // Set date parameter in URL
-      window.location.href = newUrl.toString(); // Replace current URL with updated one
-    }
-  }, [selectedDate]);
+  if (selectedDate) {
+    const formattedDate = selectedDate.format('DD-MM-YYYY');
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('date', formattedDate);
+    window.location.href = newUrl.toString();
+  }
+}, [selectedDate]);
 
 
   if (loading) return <p>Loading...</p>
@@ -220,7 +201,8 @@ export default function Main() {
     dfood: item.average_foodIntake,
     dwater: item.average_waterIntake,
     dwalk: item.totalWalkingHours,
-    dslept: item.totalHoursSlept
+    dslept: item.totalHoursSlept,
+    tsteps: item.totalSteps
   }));
 
 
@@ -234,19 +216,10 @@ export default function Main() {
   .map(item => item.totalHoursSlept)[0] || 0;
   const activityToday: number = another3Data
   .filter(item => item.Date === date)
-  .map(item => item.average_activityLevelSteps)[0] || 0;
+  .map(item => item.totalSteps)[0] || 0;
 
-  const sevenDaysAgo = dayjs(date, "DD-MM-YYYY").subtract(6, 'day');
-
-  const pastSevenDaysActivityLevels = data
-    .filter(item => {
-      const itemDate = dayjs(item.Date);
-      return itemDate.isAfter(sevenDaysAgo, 'day') && itemDate.isBefore(dayjs(date, "DD-MM-YYYY"), 'day');
-    })
-    .map(item => ({
-     date: item.Date,
-     value: item.average_activityLevelSteps
-    }));
+  const sevenDaysAgo = dayjs(date, "DD-MM-YYYY").subtract(7, 'day');
+  const tomorrow = dayjs(date, "DD-MM-YYYY").add(1, 'day');
 
   const walkingSeriesData = [
     { id: 0, value: (walkingToday-walkingHrs), color: '#2F7509'},
@@ -259,8 +232,7 @@ export default function Main() {
     { id: 1, value: sleepingToday, color: '#1313C2'},
     { id: 2, value: (sleepingHrs-sleepingToday), color: '#ADADAD'},
   ];
-
-  console.log(sleepingToday);
+  
 
     const getSleepReviewMessage = (): string => {
       if (sleepingToday <= 0.9 * sleepingHrs) {
@@ -288,16 +260,16 @@ export default function Main() {
       }
     };
 
-    if (date != null) {
-      const day = date.substring(0, 2);
-      const month = date.substring(3, 5); 
-      const year = date.substring(6, 10);
-      console.log(day);
-      console.log(month);
-      console.log(year);
-    } else {
-      console.log("Date is null or undefined");
-    }
+  const filteredData = another3Data.filter(item => {
+    const itemDate = dayjs(item.Date, "DD-MM-YYYY"); 
+    return itemDate.isAfter(sevenDaysAgo, 'day') && itemDate.isBefore(tomorrow, 'day');
+  });
+
+const weekData = filteredData.map(item => ({
+  Date: item.Date,
+  Steps: item.totalSteps
+}));
+
     
   return (
     <main>
@@ -334,148 +306,124 @@ export default function Main() {
             </div>
           <div className="cards">
             <div className="card">
-            <div className="card-content">
+            
               Activity Level 
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+              <div className="card-content">
               <p>Average {data.map(item => item.average_activityLevelSteps)} steps a day</p>
+
               {another3Data.length > 0 && (
-              <BarChart
-              dataset={pastSevenDaysActivityLevels}
-              xAxis={[{ scaleType: 'band', data: data.map(item => item.Month_Year)}]}
-              series={[
-                {
-                  data: data.map(item => item.average_activityLevelSteps), 
-                  label: 'Monthly Average Steps'
-                },
-              ]}
-              width={300}
-              height={300}
-              tooltip={{ trigger: 'item' }}
-              />
-              )}
-            </div>
-            </div>
-            <div className="card">
-            <div className="card-content">
-                Calories 
-                <Link href={'/calories?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
-                <br/>
-                <p>Average {data.map(item => item.average_calorieBurn)} calories burned a day</p>
-                {/* Assuming you have a dataset for the LineChart */}
-                <LineChart
-                  dataset={data.map(item => ({
-                    date: item.Date,
-                    calories: item.average_calorieBurn
-                  }))}
-                  series={[
-                    {
-                      data: data.map(item => item.average_calorieBurn),
-                      label: 'Calories Burned'
-                    }
-                  ]}
-                  width={300}
-                  height={300}
-                  tooltip={{ trigger: 'item' }}
+                <Box flexGrow={1} style={{ marginRight: '10px' }}>
+                <Typography>Steps This Week</Typography>
+                <BarChart
+                dataset={weekData}
+                xAxis={[{ scaleType: 'band', dataKey: 'Date'}]}
+                series={[{
+                  dataKey: 'Steps', 
+                  label: 'Steps'
+                }]}
+                width={300}
+                height={300}
+                tooltip={{ trigger: 'item' }}
                 />
+                </Box>
+              )}
+
             </div>
             </div>
             <div className="card">
             <div className="card-content">
+              Calories 
+              <Link href={'/calories?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
+              <br/>
+              <p>Average {data.map(item => item.average_calorieBurn)} calories burned a day</p>
+            </div>
+            </div>
+            <div className="card">
               Sleep 
               <Link href={'/sleep?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+              <div className="card-content">
               <p>Average {anotherData.map(item => item.AverageHoursSlept)} hours a day</p>
               <p>{getWalkReviewMessage()}</p>
               <p>{getSleepReviewMessage()}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                {another3Data.length > 0 && (
-                    <Box flexGrow={1} style={{ marginRight: '10px' }}>
-                      <Typography>Walking</Typography>
-                      <PieChart
-                        dataset={chartData}
-                        series={[{ data: walkingSeriesData, innerRadius: 40 }]}
-                        width={150}
-                        height={120}
-                        tooltip={{ trigger: 'item' }}
-                        />
-                    </Box>
-                  )}
-                  {another3Data.length > 0 && (
-                    <Box flexGrow={1} style={{ marginLeft: '10px' }}>
-                      <Typography>Sleeping</Typography>
-                      <PieChart
-                        dataset={chartData}
-                        series={[{ data: sleepingSeriesData, innerRadius: 40 }]}
-                        width={150}
-                        height={120}
-                        tooltip={{ trigger: 'item' }}
-                        />
-                    </Box>
-                  )}
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+    {another3Data.length > 0 && (
+      <div style={{ display: 'flex', alignItems: 'center', marginLeft: '40px' }}>
+        <div style={{marginLeft: '55px'}}>
+          <Typography style={{marginLeft:'-100px'}}>Walking</Typography>
+          <PieChart
+            dataset={chartData}
+            series={[{ data: walkingSeriesData, innerRadius: 20 }]}
+            width={200}
+            height={140}
+            tooltip={{ trigger: 'item' }}
+          />
+        </div>
+      </div>
+    )}
+    {another3Data.length > 0 && (
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div>
+          <Typography style={{marginLeft:'-100px'}}>Sleeping</Typography>
+          <PieChart
+            dataset={chartData}
+            series={[{ data: sleepingSeriesData, innerRadius: 20 }]}
+            width={200}
+            height={140}
+            tooltip={{ trigger: 'item' }}
+          />
+        </div>
+      </div>
+    )}
+  </div>
               </div>
             </div>
             <div className="card">
-              <div className="card-content">
               Water Intake 
               <Link href={'/water?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+              <div className="card-content">
               <p>Average {data.map(item => item.average_waterIntake)} ml a day</p>
             </div>
             </div>
             <div className="card">
-              <div className="card-content">
-                Heart Rate
-                <Link href={'/heart?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
-                <br/>
-                {data.length > 0 && (
-                  <LineChart
-                    dataset={data.map(item => ({
-                      date: item.Date,
-                      heartRate: item.average_value_heart_rate
-                    }))}
-                    series={[
-                      {
-                        data: data.map(item => item.average_value_heart_rate),
-                        label: 'Average Heart Rate'
-                      }
-                    ]}
-                    width={300}
-                    height={300}
-                    tooltip={{ trigger: 'item' }}
-                  />
-                )}
-              </div>
+            <div className="card-content">
+              Heart Rate 
+              <Link href={'/heart?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
+              <br/>
+              <p>Average {data.map(item => item.average_value_heart_rate)} beats per minute</p>
+            </div>
             </div>
             <div className="card">
-            <div className="card-content">
               Breathing Rate 
               <Link href={'/breathing?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+            <div className="card-content">
               <p>Average {data.map(item => item.average_breathing)} breaths per minute</p>
             </div>
             </div>
             <div className="card">
-            <div className="card-content">
               Temperature 
               <Link href={'/temperature?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+            <div className="card-content">
               <p>Average {data.map(item => item.average_temperature)}°c</p>
             </div>
             </div>
             <div className="card">
-            <div className="card-content">
               Weight 
               <Link href={'/weight?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+            <div className="card-content">
               <p>Average {data.map(item => item.average_weight)}kg</p>
             </div>
             </div>
             <div className="card">
-            <div className="card-content">
               Extra card 
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
+            <div className="card-content">
             </div>
             </div>
           </div>

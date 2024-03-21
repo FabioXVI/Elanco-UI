@@ -28,11 +28,11 @@ body{
   margin-bottom: 20px;
 }
 
-
-.card-content {
-  height: 100%; 
-  overflow: hidden; 
-}
+  
+  .card-content {
+    height: 100%; 
+    overflow: hidden; 
+  }
 
 
 .cards {
