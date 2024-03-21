@@ -13,6 +13,13 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import url from 'url'
 import querystring from 'querystring'
+import { BarChart, PieChart } from "@mui/x-charts";
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs, { Dayjs } from "dayjs";
+
+
 // interface Data {
 //   average_activityLevelSteps: number; // Adjust the type accordingly
 //   // Add other properties as needed
@@ -227,7 +234,7 @@ export default function Main() {
             </div>
             </div>
             <div className="card">
-              Calories
+              Calories 
               <Link href={'/calories?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <p>Average {data.map(item => item.average_calorieBurn)} calories burned a day</p>
@@ -282,10 +289,9 @@ export default function Main() {
             </div>
             </div>
             <div className="card">
-              Heart Rate
+              Heart Rate 
               <Link href={'/heart?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
-            <div className="card-content">
               <p>Average {data.map(item => item.average_value_heart_rate)} beats per minute</p>
             </div>
             </div>

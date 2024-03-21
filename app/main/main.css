@@ -1,25 +1,24 @@
 .title{
-    padding-top: 40px;
-    padding-left: 50px;
+  padding-top: 40px;
+  padding-left: 50px;
 }
 
 body{
-    margin: 0;
-    padding: 0;
-    font-size: 22px;
+  margin: 0;
+  padding: 0;
+  font-size: 22px;
 }
 
 .viewmore{
-    float:right;
-    font-size: smaller;
-    font-weight: lighter;
-    color: white;
+  float:right;
+  font-size: smaller;
+  font-weight: lighter;
+  color: white;
 }
 .card {
     background-color: #348ED8;
     color: white;
     padding: 3%;
-    height: 9rem;
     border-radius: 25px;
     border: #02253E;
     border-style: solid;
@@ -30,28 +29,25 @@ body{
 }
 
   
-.card-content {
-  display: flex; /* Add display flex */
-  flex-direction: column; /* Align children vertically */
-  align-items: center; /* Center children horizontally */
-  height: 100%; 
-  overflow: hidden; 
-}
+  .card-content {
+    height: 100%; 
+    overflow: hidden; 
+  }
 
 
 .cards {
-    max-width:1800px;
-    margin: 0 auto;
-    display: grid;
-    gap: 3rem;
-    padding-left: 10px;
-    grid-template-columns: repeat(1, 1fr);
+  max-width:1800px;
+  margin: 0 auto;
+  display: grid;
+  gap: 3rem;
+  padding-left: 10px;
+  grid-template-columns: repeat(1, 1fr);
 }
 
 @media (min-width: 800px) {
-    .cards { grid-template-columns: repeat(2, 1fr); }
-  }
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
 
-  @media (min-width: 1000px) {
-    .cards { grid-template-columns: repeat(3, 1fr); }
+@media (min-width: 1000px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
 }
