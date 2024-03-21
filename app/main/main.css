@@ -16,23 +16,26 @@ body{
   color: white;
 }
 .card {
-    background-color: #348ED8;
-    color: white;
-    padding: 3%;
-    border-radius: 25px;
-    border: #02253E;
-    border-style: solid;
-    border-width: 20px;
-    width: 300px;
-    height: 400px;
-    margin-bottom: 20px;
+  background-color: #348ED8;
+  color: white;
+  padding: 3%;
+  border-radius: 25px;
+  border: #02253E;
+  border-style: solid;
+  border-width: 20px;
+  width: 300px;
+  height: 400px;
+  margin-bottom: 20px;
 }
 
-  
-  .card-content {
-    height: 100%; 
-    overflow: hidden; 
-  }
+
+.card-content {
+display: flex; /* Add display flex */
+flex-direction: column; /* Align children vertically */
+align-items: center; /* Center children horizontally */
+height: 100%; 
+overflow: hidden; 
+}
 
 
 .cards {

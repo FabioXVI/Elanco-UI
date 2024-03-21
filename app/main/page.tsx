@@ -6,11 +6,11 @@ import "./main.css";
 import NavBar from "../navbar/page";
 import Footer from "../footer/page";
 import Link from "next/link";
-import { Box, Button, ButtonGroup } from "@mui/material";
+import { Box, Button, ButtonGroup, Typography } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { SelectChangeEvent } from '@mui/material/Select';
 import url from 'url'
 import querystring from 'querystring'
 import { BarChart, PieChart } from "@mui/x-charts";
@@ -27,7 +27,6 @@ import dayjs, { Dayjs } from "dayjs";
 interface DataItem {
   Id: number; // Adjust the type based on your actual data structure
   Date: string
-
   average_value_heart_rate: number;
   average_temperature: number;
   average_weight: number;
@@ -42,15 +41,21 @@ interface DataItem {
   AverageHoursSlept: number;
   AverageNormalHours:number;
   AverageEatingHours: number;
+
+  Month_Year: string;
+  totalWalkingHours: number;
+  totalHoursSlept: number;
+  totalSteps: number;
 }
 
 const currentUrl = window.location.href;
 const urlObj = new URL(currentUrl);
 let dogNum = urlObj.searchParams.get('dog')
-console.log(dogNum)
+let date = urlObj.searchParams.get('date')
 
 
 export default function Main() {
+
   // const [data, setData] = useState([]);
 
   const [data, setData] = useState<DataItem[]>([]);
@@ -90,25 +95,32 @@ export default function Main() {
         setAnotherError('Error fetching another data');
         setAnotherLoading(false);
       }
+  
+      try {
+        const response3 = await axios.get<DataItem[]>('http://localhost:4000/MonthlyAverage' + dogNum);
+        setAnother2Data(response3.data);
+        setAnother2Loading(false);
+      } catch (error) {
+        console.error('Error fetching another data:', error);
+        setAnother2Error('Error fetching another data');
+        setAnother2Loading(false);
+      }
+  
+      try {
+        const response4 = await axios.get<DataItem[]>('http://localhost:4000/averageEachDay' + dogNum);
+        setAnother3Data(response4.data);
+        setAnother3Loading(false);
+      } catch (error) {
+        console.error('Error fetching another data:', error);
+        setAnother3Error('Error fetching another data');
+        setAnother3Loading(false);
+      }
     };
   
-    fetchAnotherData();
+    fetchData();
   }, []);
-
-  // const [data, setData] = useState<Data | null>(null);
-
-  // async function getData() {
-  //   try {
-  //     const res = await fetch(`http://localhost:4000/average`);
-  //     const jsonData: Data = await res.json();
-  //     console.log("Received data:", jsonData);
-  //     setData(jsonData);
-  //   } catch (error) {
-  //     console.error("Error fetching data:", error);
-  //   }
-  // }
   
-  const [dog, setDog] = useState<string>('');
+  
 
   const handleChange = (event: SelectChangeEvent) => {
     setDog(event.target.value);
@@ -132,24 +144,19 @@ export default function Main() {
 
   const dogOptions = ['canineone', 'caninetwo', 'caninethree'];
 
-  
-  
-  // useEffect(() => {
-  //   getData();
-  // }, []);
+  const handleDateChange = (date: Dayjs | null) => {
+    setSelectedDate(date); // Update selected date state
+  };
 
+  useEffect(() => {
+  if (selectedDate) {
+    const formattedDate = selectedDate.format('DD-MM-YYYY');
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('date', formattedDate);
+    window.location.href = newUrl.toString();
+  }
+}, [selectedDate]);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await axios.get('http://localhost:4000/average');
-  //       setData(response.data);
-  //     } catch (error) {
-  //       console.error('Error fetching data:', error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
 
   if (loading) return <p>Loading...</p>
 
@@ -161,10 +168,7 @@ export default function Main() {
     cal: item.average_calorieBurn,
     step: item.average_activityLevelSteps,
     food: item.average_foodIntake,
-    water: item.average_waterIntake,
-
-    monthYear: item.Month_Year,
-    value: item.average_calorieBurn
+    water: item.average_waterIntake
   }));
 
   const anotherChartData = anotherData.map(item => ({
@@ -173,6 +177,99 @@ export default function Main() {
 
   }));
 
+  const anotherChart2Data = another2Data.map(item => ({
+    monthYear: item.Month_Year,
+    mhr: item.average_value_heart_rate,
+    mtemp: item.average_temperature,
+    mwei: item.average_weight,
+    mbreath: item.average_breathing,
+    mcal: item.average_calorieBurn,
+    mstep: item.average_activityLevelSteps,
+    mfood: item.average_foodIntake,
+    mwater: item.average_waterIntake
+  }));
+
+  const anotherChart3Data = another3Data.map(item => ({
+    Date: item.Date,
+    dhr: item.average_value_heart_rate,
+    dtemp: item.average_temperature,
+    dwei: item.average_weight,
+    dbreath: item.average_breathing,
+    dcal: item.average_calorieBurn,
+    dstep: item.average_activityLevelSteps,
+    dfood: item.average_foodIntake,
+    dwater: item.average_waterIntake,
+    dwalk: item.totalWalkingHours,
+    dslept: item.totalHoursSlept,
+    tsteps: item.totalSteps
+  }));
+
+
+  const walkingHrs = anotherData.reduce((totalWalk, item) => totalWalk + item.AverageWalkingHours, 0);
+  const sleepingHrs = anotherData.reduce((totalSleep, item) => totalSleep + item.AverageHoursSlept, 0);
+  const walkingToday: number = another3Data
+  .filter(item => item.Date === date)
+  .map(item => item.totalWalkingHours)[0] || 0;
+  const sleepingToday: number = another3Data
+  .filter(item => item.Date === date)
+  .map(item => item.totalHoursSlept)[0] || 0;
+  const activityToday: number = another3Data
+  .filter(item => item.Date === date)
+  .map(item => item.totalSteps)[0] || 0;
+
+  const sevenDaysAgo = dayjs(date, "DD-MM-YYYY").subtract(7, 'day');
+  const tomorrow = dayjs(date, "DD-MM-YYYY").add(1, 'day');
+
+  const walkingSeriesData = [
+    { id: 0, value: (walkingToday-walkingHrs), color: '#2F7509'},
+    { id: 1, value: walkingToday, color: '#49B80D'},
+    { id: 2, value: (walkingHrs-walkingToday), color: '#ADADAD'},
+  ];
+
+  const sleepingSeriesData = [
+    { id: 0, value: (sleepingToday-sleepingHrs), color: '#090975'},
+    { id: 1, value: sleepingToday, color: '#1313C2'},
+    { id: 2, value: (sleepingHrs-sleepingToday), color: '#ADADAD'},
+  ];
+  
+
+    const getSleepReviewMessage = (): string => {
+      if (sleepingToday <= 0.9 * sleepingHrs) {
+        return 'Your pet\'s sleeping activity is below average today.';
+        
+      } else if (sleepingToday - sleepingHrs > 0.1 * sleepingHrs) {
+        return 'Your pet\'s sleeping activity is above average today.';
+        
+      } else {
+        return 'Your pet\'s sleeping activity is within the normal range today.';
+        
+      }
+    };
+
+    const getWalkReviewMessage = (): string => {
+      if (walkingToday <= 0.9 * walkingHrs) {
+        return 'Your pet\'s walking activity is below average today.';
+        
+      } else if (walkingToday - walkingHrs > 0.1 * walkingHrs) {
+        return 'Your pet\'s walking activity is above average today.';
+        
+      } else {
+        return 'Your pet\'s walking activity is within the normal range today.';
+        
+      }
+    };
+
+  const filteredData = another3Data.filter(item => {
+    const itemDate = dayjs(item.Date, "DD-MM-YYYY"); 
+    return itemDate.isAfter(sevenDaysAgo, 'day') && itemDate.isBefore(tomorrow, 'day');
+  });
+
+const weekData = filteredData.map(item => ({
+  Date: item.Date,
+  Steps: item.totalSteps
+}));
+
+    
   return (
     <main>
         <div>
@@ -208,6 +305,7 @@ export default function Main() {
             </div>
           <div className="cards">
             <div className="card">
+            
               Activity Level 
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
@@ -237,11 +335,12 @@ export default function Main() {
               Calories 
               <Link href={'/calories?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+              <div className="card-content">
               <p>Average {data.map(item => item.average_calorieBurn)} calories burned a day</p>
             </div>
             </div>
             <div className="card">
-              Sleep
+              Sleep 
               <Link href={'/sleep?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <div className="card-content">
@@ -281,7 +380,7 @@ export default function Main() {
               </div>
             </div>
             <div className="card">
-              Water Intake
+              Water Intake 
               <Link href={'/water?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
               <div className="card-content">
@@ -292,11 +391,12 @@ export default function Main() {
               Heart Rate 
               <Link href={'/heart?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
+            <div className="card-content">
               <p>Average {data.map(item => item.average_value_heart_rate)} beats per minute</p>
             </div>
             </div>
             <div className="card">
-              Breathing Rate
+              Breathing Rate 
               <Link href={'/breathing?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
             <div className="card-content">
@@ -304,7 +404,7 @@ export default function Main() {
             </div>
             </div>
             <div className="card">
-              Temperature
+              Temperature 
               <Link href={'/temperature?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
             <div className="card-content">
@@ -312,7 +412,7 @@ export default function Main() {
             </div>
             </div>
             <div className="card">
-              Weight
+              Weight 
               <Link href={'/weight?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
               <br/>
             <div className="card-content">
@@ -320,7 +420,7 @@ export default function Main() {
             </div>
             </div>
             <div className="card">
-              Extra card
+              Extra card 
               <Link href={'/activity?dog='+dogNum}><div className="viewmore">View more {">"}</div></Link>
             <div className="card-content">
             </div>
