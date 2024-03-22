@@ -115,19 +115,24 @@ export default function Login() {
           <h2>Daily Average {anotherData.map(item => item.average_activityLevelSteps)} steps </h2>
           <h3>This graph shows the average number of steps that your pet takes on each day in a month</h3>
           
-          <BarChart
-              dataset={chartData}
-              xAxis={[{ scaleType: 'band', data: data.map(item => item.Month_Year)}]}
-              series={[
-                {
-                  data: data.map(item => item.average_activityLevelSteps), 
-                  label: 'Monthly Average Steps'
-                },
-              ]}
-              width={1000}
-              height={400}
-              tooltip={{ trigger: 'item' }}
-            />
+          
+      <div className="bar-chart-container" style={{ width: '100%', maxWidth: '1000px' }}>
+      <div className="bar-chart">
+        <BarChart
+          dataset={chartData}
+          xAxis={[{ scaleType: 'band', data: data.map(item => item.Month_Year)}]}
+          series={[
+            {
+              data: data.map(item => item.average_activityLevelSteps), 
+              label: 'Monthly Average Steps'
+            },
+          ]}
+          width={1000}
+          height={400}
+          tooltip={{ trigger: 'item' }}
+        />
+      </div>
+    </div>
           
           </div>
           <div>

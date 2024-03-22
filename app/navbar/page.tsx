@@ -8,7 +8,7 @@ export default function Nav(){
     const currentUrl = window.location.href;
     const urlObj = new URL(currentUrl);
     let dogNum = urlObj.searchParams.get('dog')
-    const link = `/main?dog=${dogNum}&date=01-01-2021`;
+    const link = `/main?dog=${dogNum}&date=08-01-2021`;
     return (
         <div  className="container">
             <div className="link-container" id="navbar">

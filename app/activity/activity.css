@@ -2,3 +2,25 @@ body{
     margin: 0;
     padding: 0;
 }
+
+.bar-chart {
+    width: 100%; 
+  }
+  
+  @media (max-width: 600px) {
+    .bar-chart {
+      width: 90%; 
+    }
+  }
+  
+  @media (min-width: 601px) and (max-width: 900px) {
+    .bar-chart {
+      width: 80%; 
+    }
+  }
+  
+  @media (min-width: 901px) {
+    .bar-chart {
+      width: 70%; 
+    }
+  }

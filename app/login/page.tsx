@@ -29,7 +29,7 @@ export default function Login() {
               <br />
               <br />
               <div>
-              <Link href="/main?dog=canineone&date=01-01-2021" style={{ textDecoration: 'none' }}>
+              <Link href="/main?dog=canineone&date=08-01-2021" style={{ textDecoration: 'none' }}>
                   <Button style={{width:"15%"}}>Login</Button>
                 </Link>
               </div>
